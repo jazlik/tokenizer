@@ -44,7 +44,7 @@ Wyniki testów na pełnym eposie narodowym (447k znaków, 69k słów) po wytreno
 *   **Wierność rekonstrukcji (Wycofanie / Dekodowanie):** **100.0% (IDEALNA)**.
 *   **Liczba nieznanych tokenów (`<UNK>`):** **0** (Idealne pokrycie bajtowe, całkowite wyeliminowanie problemu nieznanych znaków).
 *   **Optymalny współczynnik redukcji długości tekstu (kompresja znakowa):** **68.18%** (tekst w postaci tokenów zajmuje ponad 3.14-krotnie mniej miejsca!).
-*   **Wskaźnik Fertility:** **2.060 tok/słowo** (Niespotykana dotąd, rewelacyjna kompresja — słownik potrzebuje średnio zaledwie 2.06 tokenu do zakodowania całego bogatego polskiego słowa, co stanowi olbrzymi skok wydajności w porównaniu z bazowym 2.353!).
+*   **Wskaźnik Fertility:** **2.060 tok/słowo** (Co stanowi dość spory i zauważalny przeskok w kompresji w porównaniu z pierwotnym wynikiem 2.353).
 
 ### Próbka podziału tekstu (Inwokacja):
 *   `Adam Mickiewicz` $\rightarrow$ `['A', 'dam ', 'Mi', 'ckie', 'wicz']`
