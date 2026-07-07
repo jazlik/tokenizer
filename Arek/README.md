@@ -4,10 +4,10 @@ Byte-level BPE trenowany **od zera w czystym Pythonie** (bez bibliotek). Wszystk
 **zero `<UNK>`, round-trip lossless**.
 
 **Organizacja repo = katalog per rozmiar słownika (`vocab`)** — bo *vocab to główna dźwignia fertility*
-(zmierzone, patrz „Krzywa vocab"). W każdym katalogu warianty w nazwie: **`<korpus>-<pretok>.json`**.
+(zmierzone, patrz „Krzywa vocab"). W katalogu warianty: **`slayer-v1`/`slayer-v2`** (SpeakLeash) lub **`lektury-*`** (Wolne Lektury) — patrz „Nazewnictwo".
 
-> **Najlepszy fertility:** [`128000/speakleash-gpt4.json`](128000/speakleash-gpt4.json) — **1,524 tok/słowo**
-> (Rényi 0,398, GPT-4 pre-tok + pełne cyfry). To Pareto-wybór — tradeoff niżej.
+> **Najlepszy fertility:** [`128000/slayer-v2.json`](128000/slayer-v2.json) — **1,524 tok/słowo**
+> (Rényi 0,398, regex cl100k + pełne cyfry). To Pareto-wybór — tradeoff niżej.
 
 ## Struktura (po vocabie)
 
@@ -15,12 +15,18 @@ Byte-level BPE trenowany **od zera w czystym Pythonie** (bez bibliotek). Wszystk
 |---|---|---|
 | `512/` `1024/` `2048/` | `lektury-naive`, `lektury-fast` | Wolne Lektury (2,71 M zn.) · brak / GPT-2 |
 | `4096/` `8192/` `15000/` | `lektury-fast` | Wolne Lektury · GPT-2 |
-| `32000/` `64000/` | `speakleash-gpt2`, `speakleash-gpt4` | SpeakLeash ~4,14 GB · GPT-2 / GPT-4+cyfry |
-| `128000/` | `speakleash-gpt4` | SpeakLeash 4,14 GB · GPT-4 + pełne cyfry |
+| `32000/` `64000/` | `slayer-v1`, `slayer-v2` | SpeakLeash 5GB-sample · regex GPT-2 / cl100k+cyfry |
+| `128000/` | `slayer-v2` | SpeakLeash 5GB-sample · regex cl100k + pełne cyfry |
 
-Warianty: **`naive`** = dydaktyczny `O(n·m)`, bez pre-tok · **`fast`** / **`speakleash-gpt2`** = pre-tok GPT-2
-(bucketing + lazy-heap, parytet 1:1 z rdzeniem) · **`speakleash-gpt4`** = pre-tok GPT-4 (cl100k regex)
-**+ pełne runy cyfr `\p{N}+`** — spójnie dla 32k/64k/128k.
+Warianty: **`lektury-naive`** = dydaktyczny `O(n·m)`, bez pre-tok · **`lektury-fast`** / **`slayer-v1`** =
+pre-tok regex GPT-2 (bucketing + lazy-heap, parytet 1:1 z rdzeniem) · **`slayer-v2`** = pre-tok regex
+cl100k (z GPT-4) **+ pełne runy cyfr `\p{N}+`** — spójnie dla 32k/64k/128k.
+
+### Nazewnictwo
+**`slayer-vN` = generacja *naszego* przepisu BPE (metoda SlayerLab), nie model.** `v1` = regex pre-tok GPT-2;
+`v2` = regex cl100k (z GPT-4) + pełne runy cyfr. **Korpus to tylko dane** i jest wspólny dla całego repo →
+trzymamy go w metadanej, nie w nazwie: SpeakLeash **5 GB-sample** (shardy 0001-0004, ~3–4,14 GB, held-out 0005).
+`lektury-*` = osobny korpus dydaktyczny (Wolne Lektury) — tam korpus jest wyróżnikiem, więc zostaje w nazwie.
 
 ## Metryki (i po co)
 
@@ -37,14 +43,14 @@ Warianty: **`naive`** = dydaktyczny `O(n·m)`, bez pre-tok · **`fast`** / **`sp
 
 | vocab | wariant | zn/tok | fertility | Rényi | RT |
 |---|---|---|---|---|---|
-| 32000 | speakleash-gpt2 | 4,03 | 1,765 | 0,451 | ✅ |
-| 32000 | speakleash-gpt4 | 4,05 | 1,756 | **0,472** | ✅ |
-| 64000 | speakleash-gpt2 | 4,37 | 1,630 | 0,412 | ✅ |
-| 64000 | speakleash-gpt4 | 4,39 | 1,619 | 0,431 | ✅ |
-| **128000** | **speakleash-gpt4** | **4,67** | **1,524** | 0,398 | ✅ |
+| 32000 | slayer-v1 | 4,03 | 1,765 | 0,451 | ✅ |
+| 32000 | slayer-v2 | 4,05 | 1,756 | **0,472** | ✅ |
+| 64000 | slayer-v1 | 4,37 | 1,630 | 0,412 | ✅ |
+| 64000 | slayer-v2 | 4,39 | 1,619 | 0,431 | ✅ |
+| **128000** | **slayer-v2** | **4,67** | **1,524** | 0,398 | ✅ |
 
-**Vocab dominuje.** 32k→64k→128k (gpt4): fertility **1,756 → 1,619 → 1,524**. Dla kontrastu: zmiana pre-toka
-(GPT-2→GPT-4) daje ~**−0,01**, a **6× więcej danych 0,00** (saturacja — patrz „Skala danych"). Ogon 128k
+**Vocab dominuje.** 32k→64k→128k (slayer-v2): fertility **1,756 → 1,619 → 1,524**. Dla kontrastu: zmiana pre-toka
+(regex GPT-2→cl100k) daje ~**−0,01**, a **6× więcej danych 0,00** (saturacja — patrz „Skala danych"). Ogon 128k
 jest **zdrowy** (`best_c≈500` na ostatnich merge'ach → 4,14 GB wystarczyło, bez glitch-tokenów).
 
 **Tradeoff (nie darmowe):** większy vocab → **Rényi ↓** (0,451→0,398) i **tabela embeddingów rośnie** (128k =
@@ -66,8 +72,8 @@ vocab Llama-3). Wybór vocab = kompromis fertility ↔ Rényi ↔ rozmiar modelu
 
 ## Co zmierzyliśmy i dlaczego
 
-1. **Vocab ↑ → fertility ↓ — NAJWIĘKSZA dźwignia.** 32k→128k (gpt4): 1,756→1,524 (−0,23). Największy z efektów.
-2. **Pre-tok GPT-4 + pełne cyfry — mały, ale realny zysk.** @32k neutralny na fert (Rényi↑); **@64k wygrywa
+1. **Vocab ↑ → fertility ↓ — NAJWIĘKSZA dźwignia.** 32k→128k (slayer-v2): 1,756→1,524 (−0,23). Największy z efektów.
+2. **Pre-tok cl100k (z GPT-4) + pełne cyfry — mały, ale realny zysk.** @32k neutralny na fert (Rényi↑); **@64k wygrywa
    obie osie** (1,630→1,619, Rényi 0,412→0,431). Najlepszy pre-tok, ~10× słabszy efekt niż vocab.
 3. **Skala danych: nasycona JUŻ przy ~3 GB (przy stałym vocab).** dynaword 2,84→17 GB (6×): fertility płaski.
    Więcej danych **nie** obniża fertility — ogranicza je **rozmiar słownika**. *(„Diminishing Returns…" arXiv
@@ -79,7 +85,7 @@ vocab Llama-3). Wybór vocab = kompromis fertility ↔ Rényi ↔ rozmiar modelu
 
 ## Skala danych i dystrybucja — eksperyment dynaword (zmierzony)
 
-Retrain 64k (pipeline GPT-4 + pełne cyfry) na [`SlayerLab/polish-dynaword`](https://huggingface.co/datasets/SlayerLab/polish-dynaword)
+Retrain 64k (pipeline slayer-v2: cl100k + pełne cyfry) na [`SlayerLab/polish-dynaword`](https://huggingface.co/datasets/SlayerLab/polish-dynaword)
 (human-text, 12 źródeł, CC-BY-SA). Zmienne rozłożone; pomiar na OBU held-outach.
 
 | trening (64k) | fert @SpeakLeash-0005 | fert @dyna-held | gap |
@@ -95,7 +101,7 @@ Retrain 64k (pipeline GPT-4 + pełne cyfry) na [`SlayerLab/polish-dynaword`](htt
 
 ## Fleksja pod mikroskopem — tokeny vs metryka (dowód punktu 4)
 
-Realny podział na tokeny `64000/speakleash-gpt2` (zweryfikowany 1:1 z encoderem; słowa w izolacji):
+Realny podział na tokeny `64000/slayer-v1` (zweryfikowany 1:1 z encoderem; słowa w izolacji):
 
 | słowo | tokeny | `-ość` / rdzeń |
 |---|---|---|
@@ -120,12 +126,12 @@ within-tokenizer): tokenizer trafia w granicę `stem|końcówka` tylko ~**19%** 
 
 Każdy plik to JSON w formacie zbliżonym do HuggingFace: blok `model` z `vocab` (`bytes_to_unicode` → id) i
 `merges` (lista `"lewy prawy"` w kolejności uczenia). **Pre-tok (zdeterminowany nazwą pliku):** `lektury-fast`
-i `speakleash-gpt2` → regex GPT-2; **każdy `speakleash-gpt4`** (32k/64k/128k) → regex GPT-4 (cl100k) **+ pełne
+i `slayer-v1` → regex GPT-2; **każdy `slayer-v2`** (32k/64k/128k) → regex cl100k (z GPT-4) **+ pełne
 runy cyfr `\p{N}+`**; `lektury-naive` → bez pre-tok.
 
 ```python
 import json
-m = json.load(open("128000/speakleash-gpt4.json", encoding="utf-8"))["model"]
+m = json.load(open("128000/slayer-v2.json", encoding="utf-8"))["model"]
 vocab = m["vocab"]                       # repr -> id
 merges = {}
 for line in m["merges"]:                 # kolejność = rank
